@@ -1,10 +1,16 @@
 using HoneyRaesAPI.Models;
 using HoneyRaesAPI.Models.DTOs;
-// List<HoneyRaesAPI.Models.Customer> customers = new List<HoneyRaesAPI.Models.Customer> { };
-// List<HoneyRaesAPI.Models.Employee> employees = new List<HoneyRaesAPI.Models.Employee> { };
-// List<HoneyRaesAPI.Models.ServiceTicket> serviceTickets = new List<HoneyRaesAPI.Models.ServiceTicket> { };
+List<HoneyRaesAPI.Models.Customer> customers = new List<HoneyRaesAPI.Models.Customer> { };
+List<HoneyRaesAPI.Models.Employee> employees = new List<HoneyRaesAPI.Models.Employee> { };
+List<HoneyRaesAPI.Models.ServiceTicket> serviceTickets = new List<HoneyRaesAPI.Models.ServiceTicket> { };
 
-List<Customer> customers = new List<Customer>
+{/*
+    Current Progress: Start of below chpt
+    https://github.com/nashville-software-school/server-side-dotnet-curriculum/blob/main/book-2-web-apis/chapters/honey-raes-get-emps-cust.md
+*/}
+
+// List<Customer> customers = new List<Customer>
+customers = new List<Customer>
 {
     new Customer()
         { Id = 1,
@@ -23,7 +29,8 @@ List<Customer> customers = new List<Customer>
         },
 
 };
-List<Employee> employees = new List<Employee>
+// List<Employee> employees = new List<Employee>
+employees = new List<Employee>
 {
     new Employee()
     {
@@ -38,7 +45,8 @@ List<Employee> employees = new List<Employee>
         Specialty = "Nothing",
     }
 };
-List<ServiceTicket> serviceTickets = new List<ServiceTicket>
+// List<ServiceTicket> serviceTickets = new List<ServiceTicket>
+serviceTickets = new List<ServiceTicket>
 {
     new ServiceTicket()
     {
@@ -115,8 +123,10 @@ app.MapGet("/servicetickets", () =>
         Emergency = t.Emergency,
         DateCompleted = t.DateCompleted
     });
+
 });
 
+// route param {id} must match the handler lambda functions param
 app.MapGet("/servicetickets/{id}", (int id) =>
 {
     ServiceTicket serviceTicket = serviceTickets.FirstOrDefault(st => st.Id == id);
