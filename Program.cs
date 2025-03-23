@@ -6,7 +6,7 @@ List<HoneyRaesAPI.Models.ServiceTicket> serviceTickets = new List<HoneyRaesAPI.M
 
 {/*
     Current Progress: Start of below chpt
-    https://github.com/nashville-software-school/server-side-dotnet-curriculum/blob/main/book-2-web-apis/chapters/honey-raes-create.md
+    https://github.com/nashville-software-school/server-side-dotnet-curriculum/blob/main/book-2-web-apis/chapters/honey-raes-delete.md
 */}
 
 // List<Customer> customers = new List<Customer>
