@@ -232,7 +232,6 @@ app.MapGet("/customers/{id}", (int id) =>
 
 app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
 {
-
     // Get the customer data to check that the customerid for the service ticket is valid
     Customer customer = customers.FirstOrDefault(c => c.Id == serviceTicket.CustomerId);
 
@@ -260,7 +259,23 @@ app.MapPost("/servicetickets", (ServiceTicket serviceTicket) =>
         Description = serviceTicket.Description,
         Emergency = serviceTicket.Emergency
     });
+});
 
+app.MapDelete("/servicetickets/{id}", (int id) => 
+{
+    // first need to find the service ticket that has matching id
+    // need to the delete service ticket from list
+    // if no match return Results.NotFound()
+    // need to return Results.NoContent()
+    ServiceTicket ticket = serviceTickets.FirstOrDefault(s => s.Id == id);
+
+    if (ticket == null)
+    {
+        return Results.NotFound();
+    }
+
+    serviceTickets.Remove(ticket);
+    return Results.NoContent();
 });
 
 app.Run();
