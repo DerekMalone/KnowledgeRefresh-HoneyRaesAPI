@@ -278,5 +278,50 @@ app.MapDelete("/servicetickets/{id}", (int id) =>
     return Results.NoContent();
 });
 
+app.MapPut("/servicetickets/{id}", (int id, ServiceTicket serviceTicket) => 
+{
+    // Search for ServiceTicket, set ticketToUpdate to the found ticket
+    ServiceTicket ticketToUpdate = serviceTickets.FirstOrDefault( st => st.Id == id);
+
+    // Confirms a ticket was found to update. If not then it returns an error
+    if (ticketToUpdate == null)
+    {
+        return Results.NotFound();
+    }
+    // Confirms that the id submitted and the ticket to update match as well.
+    if (id != ticketToUpdate.Id)
+    {
+        return Results.BadRequest();
+    }
+
+    // Updates serviceTicket that with changed information and keeps information that doesn't need to be updated the same as well.
+    ticketToUpdate.CustomerId = serviceTicket.CustomerId;
+    ticketToUpdate.EmployeeId = serviceTicket.EmployeeId;
+    ticketToUpdate.Description = serviceTicket.Description;
+    ticketToUpdate.Emergency = serviceTicket.Emergency;
+    ticketToUpdate.DateCompleted = serviceTicket.DateCompleted;
+
+    return Results.NoContent();
+});
+
+app.MapPost("/servicetickets/{id}/complete", (int id) => 
+{
+    ServiceTicket ticketToComplete = serviceTickets.FirstOrDefault( st => st.Id == id);
+
+        // Confirms a ticket was found to update. If not then it returns an error
+    if (ticketToComplete == null)
+    {
+        return Results.NotFound();
+    }
+    // Confirms that the id submitted and the ticket to update match as well.
+    if (id != ticketToComplete.Id)
+    {
+        return Results.BadRequest();
+    }
+
+    ticketToComplete.DateCompleted = DateTime.Today;
+    return Results.NoContent();
+});
+
 app.Run();
 
