@@ -1,8 +1,10 @@
+using Npgsql;
 using HoneyRaesAPI.Models;
 using HoneyRaesAPI.Models.DTOs;
 List<HoneyRaesAPI.Models.Customer> customers = new List<HoneyRaesAPI.Models.Customer> { };
 List<HoneyRaesAPI.Models.Employee> employees = new List<HoneyRaesAPI.Models.Employee> { };
 List<HoneyRaesAPI.Models.ServiceTicket> serviceTickets = new List<HoneyRaesAPI.Models.ServiceTicket> { };
+var connectionString = "Host=localhost;Port=5432;Username=postgres;Password=abcd1234;Database=HoneyRaes";
 
 {/*
     Current Progress: Start of below chpt
@@ -159,16 +161,48 @@ app.MapGet("/servicetickets/{id}", (int id) =>
     });
 });
 
-app.MapGet("/employees", () => 
+{/* //!Original non npgsql code below.
+// app.MapGet("/employees", () => 
+// {
+//         return employees.Select(e => new EmployeeDTO
+//         {
+//             Id = e.Id,
+//             Name = e.Name,
+//             Specialty = e.Specialty
+//         });
+// });
+*/}
+
+//! NpgSQL code below.
+app.MapGet("/employees", () =>
 {
-        return employees.Select(e => new EmployeeDTO
+    // create an empty list of employees to add to. 
+    List<Employee> employees = new List<Employee>();
+    //make a connection to the PostgreSQL database using the connection string
+    using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+    //open the connection
+    connection.Open();
+    // create a sql command to send to the database
+    using NpgsqlCommand command = connection.CreateCommand();
+    command.CommandText = "SELECT * FROM Employee";
+    //send the command. 
+    using NpgsqlDataReader reader = command.ExecuteReader();
+    //read the results of the command row by row
+    while (reader.Read()) // reader.Read() returns a boolean, to say whether there is a row or not, it also advances down to that row if it's there. 
+    {
+        //This code adds a new C# employee object with the data in the current row of the data reader 
+        employees.Add(new Employee
         {
-            Id = e.Id,
-            Name = e.Name,
-            Specialty = e.Specialty
+            Id = reader.GetInt32(reader.GetOrdinal("Id")), //find what position the Id column is in, then get the integer stored at that position
+            Name = reader.GetString(reader.GetOrdinal("Name")),
+            Specialty = reader.GetString(reader.GetOrdinal("Specialty"))
         });
+    }
+    //once all the rows have been read, send the list of employees back to the client as JSON
+    return employees;
 });
 
+{/* //! Original NpgSQL Code
 app.MapGet("/employees/{id}", (int id) =>
 {
     Employee employee = employees.FirstOrDefault(e => e.Id == id);
@@ -193,6 +227,33 @@ app.MapGet("/employees/{id}", (int id) =>
         }).ToList()
     });
 });
+*/}
+
+//! NpgSQL getEmployeesById below
+app.MapGet("/employees/{id}", (int id) =>
+{
+    Employee employee = null;
+    using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+    connection.Open();
+    using NpgsqlCommand command = connection.CreateCommand();
+    command.CommandText = "SELECT * FROM Employee WHERE Id = @id";
+    // use command parameters to add the specific Id we are looking for to the query
+    command.Parameters.AddWithValue("@id", id);
+    using NpgsqlDataReader reader = command.ExecuteReader();
+    if (reader.Read())
+    {
+        employee = new Employee
+        {
+            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+            Name = reader.GetString(reader.GetOrdinal("Name")),
+            Specialty = reader.GetString(reader.GetOrdinal("Speciality"))
+        };
+    }
+    return employee;
+});
+
+// TODO: https://github.com/nashville-software-school/server-side-dotnet-curriculum/blob/main/book-3-sql-efcore/chapters/honey-raes-related-data.md
+//! Need to pick up where I left off on the above chpt. Will be starting at "Adding ServiceTickets to the Employee object"
 
 app.MapGet("/customers", () => 
 {
