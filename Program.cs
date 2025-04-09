@@ -12,89 +12,89 @@ var connectionString = "Host=localhost;Port=5432;Username=postgres;Password=abcd
 */}
 
 // List<Customer> customers = new List<Customer>
-customers = new List<Customer>
-{
-    new Customer()
-        { Id = 1,
-            Name = "Bob",
-            Address = "123 Main St",
-        },
-    new Customer()
-        { Id = 2,
-            Name = "Jim",
-            Address = "124 Main St",
-        },
-    new Customer()
-        { Id = 3,
-            Name = "Thorton",
-            Address = "125 Main St",
-        },
+// customers = new List<Customer>
+// {
+//     new Customer()
+//         { Id = 1,
+//             Name = "Bob",
+//             Address = "123 Main St",
+//         },
+//     new Customer()
+//         { Id = 2,
+//             Name = "Jim",
+//             Address = "124 Main St",
+//         },
+//     new Customer()
+//         { Id = 3,
+//             Name = "Thorton",
+//             Address = "125 Main St",
+//         },
 
-};
-// List<Employee> employees = new List<Employee>
-employees = new List<Employee>
-{
-    new Employee()
-    {
-        Id = 1,
-        Name = "Tim",
-        Specialty = "Accounting",
-    },
-    new Employee()
-    {
-        Id = 2,
-        Name = "Timmy",
-        Specialty = "Nothing",
-    }
-};
-// List<ServiceTicket> serviceTickets = new List<ServiceTicket>
-serviceTickets = new List<ServiceTicket>
-{
-    new ServiceTicket()
-    {
-        Id = 1,
-        CustomerId = 1,
-        EmployeeId = 2,
-        Description = "Nice Guest",
-        Emergency = false,
-        DateCompleted = DateTime.Now,
-    },
-    new ServiceTicket()
-    {
-        Id = 2,
-        CustomerId = 1,
+// };
+// // List<Employee> employees = new List<Employee>
+// employees = new List<Employee>
+// {
+//     new Employee()
+//     {
+//         Id = 1,
+//         Name = "Tim",
+//         Specialty = "Accounting",
+//     },
+//     new Employee()
+//     {
+//         Id = 2,
+//         Name = "Timmy",
+//         Specialty = "Nothing",
+//     }
+// };
+// // List<ServiceTicket> serviceTickets = new List<ServiceTicket>
+// serviceTickets = new List<ServiceTicket>
+// {
+//     new ServiceTicket()
+//     {
+//         Id = 1,
+//         CustomerId = 1,
+//         EmployeeId = 2,
+//         Description = "Nice Guest",
+//         Emergency = false,
+//         DateCompleted = DateTime.Now,
+//     },
+//     new ServiceTicket()
+//     {
+//         Id = 2,
+//         CustomerId = 1,
 
-        Description = "Pushy Guest",
-        Emergency = true,
-        DateCompleted = DateTime.Now.AddDays(-3),
-    },
-    new ServiceTicket()
-    {
-        Id = 3,
-        CustomerId = 2,
-        EmployeeId = 2,
-        Description = "Nice Guest",
-        Emergency = false,
-    },
-    new ServiceTicket()
-    {
-        Id = 4,
-        CustomerId = 3,
-        EmployeeId = 1,
-        Description = "Nice Guest",
-        Emergency = false,
-        DateCompleted = DateTime.Now,
-    },
-    new ServiceTicket()
-    {
-        Id = 5,
-        CustomerId = 1,
-        EmployeeId = 1,
-        Description = "Nice Guest",
-        Emergency = true,
-        DateCompleted = DateTime.Now,
-    },
-};
+//         Description = "Pushy Guest",
+//         Emergency = true,
+//         DateCompleted = DateTime.Now.AddDays(-3),
+//     },
+//     new ServiceTicket()
+//     {
+//         Id = 3,
+//         CustomerId = 2,
+//         EmployeeId = 2,
+//         Description = "Nice Guest",
+//         Emergency = false,
+//     },
+//     new ServiceTicket()
+//     {
+//         Id = 4,
+//         CustomerId = 3,
+//         EmployeeId = 1,
+//         Description = "Nice Guest",
+//         Emergency = false,
+//         DateCompleted = DateTime.Now,
+//     },
+//     new ServiceTicket()
+//     {
+//         Id = 5,
+//         CustomerId = 1,
+//         EmployeeId = 1,
+//         Description = "Nice Guest",
+//         Emergency = true,
+//         DateCompleted = DateTime.Now,
+//     },
+// };
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -236,24 +236,112 @@ app.MapGet("/employees/{id}", (int id) =>
     using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
     connection.Open();
     using NpgsqlCommand command = connection.CreateCommand();
-    command.CommandText = "SELECT * FROM Employee WHERE Id = @id";
+    command.CommandText = @"SELECT 
+            e.Id,
+            e.Name, 
+            e.Specialty, 
+            st.Id AS serviceTicketId, 
+            st.CustomerId,
+            st.Description,
+            st.Emergency,
+            st.DateCompleted 
+        FROM Employee e
+        JOIN ServiceTicket st ON st.EmployeeId = e.Id
+        WHERE e.Id = @id";
     // use command parameters to add the specific Id we are looking for to the query
     command.Parameters.AddWithValue("@id", id);
     using NpgsqlDataReader reader = command.ExecuteReader();
-    if (reader.Read())
+
+while (reader.Read())
     {
-        employee = new Employee
+        if (employee == null)
         {
-            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-            Name = reader.GetString(reader.GetOrdinal("Name")),
-            Specialty = reader.GetString(reader.GetOrdinal("Speciality"))
-        };
+            employee = new Employee
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                Specialty = reader.GetString(reader.GetOrdinal("Specialty")),
+                ServiceTickets = new List<ServiceTicket>() //empty List to add service tickets to
+            };
+        }
+        // reader.IsDBNull checks if a column in a particular position is null
+        if (!reader.IsDBNull(reader.GetOrdinal("serviceTicketId")))
+        {
+            employee.ServiceTickets.Add(new ServiceTicket
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("serviceTicketId")),
+                CustomerId = reader.GetInt32(reader.GetOrdinal("CustomerId")),
+                //we don't need to get this from the database, we already know it
+                EmployeeId = id,
+                Description = reader.GetString(reader.GetOrdinal("Description")),
+                Emergency = reader.GetBoolean(reader.GetOrdinal("Emergency")),
+                // Npgsql can't automatically convert NULL in the database to C# null, so we have to check whether it's null before trying to get it
+                DateCompleted = reader.IsDBNull(reader.GetOrdinal("DateCompleted")) ? null : reader.GetDateTime(reader.GetOrdinal("DateCompleted"))
+            });
+        }
     }
+     // Return 404 if the employee is never set (meaning, that reader.Read() immediately returned false because the id did not match an employee)
+    // otherwise 200 with the employee data
+    return employee == null ? Results.NotFound() : Results.Ok(employee);
+});
+
+
+app.MapPost("/employees", (Employee employee) =>
+{
+    using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+    connection.Open();
+    using NpgsqlCommand command = connection.CreateCommand();
+    command.CommandText = @"
+        INSERT INTO Employee (Name, Specialty)
+        VALUES (@name, @specialty)
+        RETURNING Id
+    ";
+    command.Parameters.AddWithValue("@name", employee.Name);
+    command.Parameters.AddWithValue("@specialty", employee.Specialty);
+
+    //the database will return the new Id for the employee, add it to the C# object
+    employee.Id = (int)command.ExecuteScalar();
+
     return employee;
 });
 
-// TODO: https://github.com/nashville-software-school/server-side-dotnet-curriculum/blob/main/book-3-sql-efcore/chapters/honey-raes-related-data.md
-//! Need to pick up where I left off on the above chpt. Will be starting at "Adding ServiceTickets to the Employee object"
+// TODO: https://github.com/nashville-software-school/server-side-dotnet-curriculum/blob/main/book-3-sql-efcore/chapters/honey-raes-create.md
+//! Need to work out why employees posted to application are not returing in get employee by id. Also need to work out how to update one.
+app.MapPut("/employees/{id}", (int id, Employee employee) =>
+{
+    if (id != employee.Id)
+    {
+        return Results.BadRequest();
+    }
+    using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+    connection.Open();
+    using NpgsqlCommand command = connection.CreateCommand();
+    command.CommandText = @"
+        UPDATE Employee 
+        SET Name = @name,
+            Specialty = @specialty
+        WHERE Id = @id
+    ";
+    command.Parameters.AddWithValue("@name", employee.Name);
+    command.Parameters.AddWithValue("@specialty", employee.Specialty);
+    command.Parameters.AddWithValue("@id", id);
+
+    command.ExecuteNonQuery();
+    return Results.NoContent();
+});
+
+app.MapDelete("/employees/{id}", (int id) =>
+{
+    using NpgsqlConnection connection = new NpgsqlConnection(connectionString);
+    connection.Open();
+    using NpgsqlCommand command = connection.CreateCommand();
+    command.CommandText = @"
+        DELETE FROM Employee WHERE Id=@id
+    ";
+    command.Parameters.AddWithValue("@id", id);
+    command.ExecuteNonQuery();
+    return Results.NoContent();
+});
 
 app.MapGet("/customers", () => 
 {
